@@ -257,13 +257,13 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
         printf("Decode/RF      : EMPTY\n");
     }
 //------------------
-//printf("\n---------------------------\nArray: ");
-// for(int i = 0; i < arrLen; i++){
-//     printf(" %d ",regArray[i]);
-// }
-// printf("\nArray length: %d",arrLen);
-//printf("\n-----------------------------\n");
-//printf("Z flag : %d\n---------------------------\n", cpu->zero_flag);
+printf("\n---------------------------\nArray: ");
+for(int i = 0; i < arrLen; i++){
+    printf(" %d ",regArray[i]);
+}
+printf("\nArray length: %d",arrLen);
+printf("\n-----------------------------\n");
+printf("Z flag : %d\n---------------------------\n", cpu->zero_flag);
 //------------------
 
     if (cpu->decode.has_insn)
@@ -300,7 +300,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -328,7 +328,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
                 
@@ -356,7 +356,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -383,7 +383,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -410,7 +410,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -419,12 +419,12 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(canProceed==0){
                     for(int i=0; i<arrLen;i++){
                         if(regArray[i]==cpu->decode.rs1 || regArray[i]==cpu->decode.rs2){
-                        canProceed = 0;
-                        stalled = 1;
-                        break;
+                            canProceed = 0;
+                            stalled = 1;
+                            break;
                         }else{
-                        canProceed = 1;
-                        stalled = 0;
+                            canProceed = 1;
+                            stalled = 0;
                         }
                     }
                 }
@@ -437,7 +437,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -464,7 +464,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -487,7 +487,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                     regArray[arrLen] = cpu->decode.rd;
                     arrLen+=1;
                     /* MOVC doesn't have register operands */
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -514,7 +514,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 //printf("stalled:%d\n",stalled);
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
-                break;
+                    //break;
                 }
                 break;
             }
@@ -523,6 +523,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(canProceed==0){
                     for(int i=0; i<arrLen;i++){
                         if(regArray[i]==cpu->decode.rs1 || regArray[i]==cpu->decode.rs2){
+                        //if(regArray[i]==cpu->decode.rs2){
                         canProceed = 0;
                         stalled = 1;
                         break;
@@ -542,7 +543,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -569,7 +570,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 //printf("stalled:%d\n",stalled);
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -596,7 +597,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 //printf("stalled:%d\n",stalled);
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -628,7 +629,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -657,7 +658,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
                     cpu->decode.rs3_value = cpu->regs[cpu->decode.rs3];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -684,7 +685,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -707,13 +708,13 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
     }
 
 //------------------
-// printf("\n----------------------------\nArray before execute: ");
-// for(int i = 0; i < arrLen; i++){
-//     printf(" %d ",regArray[i]);
-// }
-// printf("\nArray length: %d",arrLen);
-// printf("\n------------------------------\n");
-//printf("Z flag after decode: %d\n---------------------------\n", cpu->zero_flag);
+printf("\n----------------------------\nArray before execute: ");
+for(int i = 0; i < arrLen; i++){
+    printf(" %d ",regArray[i]);
+}
+printf("\nArray length: %d",arrLen);
+printf("\n------------------------------\n");
+printf("Z flag after decode: %d\n---------------------------\n", cpu->zero_flag);
 //------------------
 
 
@@ -1094,8 +1095,8 @@ APEX_memory(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 cpu->data_memory[cpu->memory.memory_address] = cpu->memory.rs1_value;
                 break;
             }
-            case OPCODE_BZ:{}
-            case OPCODE_BNZ:{}
+            //case OPCODE_BZ:{}
+            //case OPCODE_BNZ:{}
             case OPCODE_ADDL:
             {
                 break;
