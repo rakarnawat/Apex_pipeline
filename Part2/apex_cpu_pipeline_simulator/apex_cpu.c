@@ -21,6 +21,8 @@ int prevInstValue=0;
 int canProceed = 0;
 int argValue=0;
 int branchValue=0;
+int neverTrue=0;
+int validCheck[] ={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 int mulCycle=0;
 int lsCycle=0;
@@ -33,6 +35,7 @@ int lsStalled=0;
 int intCycle=0;
 int mulStalled=0;
 int intStalled=0;
+int proceed = 0;
 
 int ENABLE_DEBUG_MESSAGES = 0;
 int ENABLE_DISPLAY = 0;
@@ -216,8 +219,9 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
 
     if(cpu->fetch.has_insn == FALSE && ENABLE_DEBUG_MESSAGES==1){
         printf("Fetch          : EMPTY\n");
-    }else
-    if(stalled==0 && lsStalled==0 && mulStalled==0 && intStalled==0){
+    }
+        
+    if(stalled==0 && proceed==1){
         if (cpu->fetch.has_insn)
         {
             /* This fetches new branch target instruction from next cycle */
@@ -235,6 +239,18 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             /* Index into code memory using this pc and copy all instruction fields
             * into fetch latch  */
             current_ins = &cpu->code_memory[get_code_memory_index_from_pc(cpu->pc)];
+
+            if(lsStalled==1){
+                if(strcmp(current_ins->opcode_str,"LOAD")==0|| strcmp(current_ins->opcode_str,"STORE")==0 ||
+                strcmp(current_ins->opcode_str,"LDR")==0 || strcmp(current_ins->opcode_str,"STR")==0){
+                    lsStalled=1;
+                }
+            }
+            if(mulStalled==1){
+                if(strcmp(current_ins->opcode_str,"MUL")==0){
+                    mulStalled=1;
+                }
+            }
             strcpy(cpu->fetch.opcode_str, current_ins->opcode_str);
             cpu->fetch.opcode = current_ins->opcode;
             cpu->fetch.rd = current_ins->rd;
@@ -246,6 +262,19 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
 
             /* Update PC for next instruction */
             cpu->pc += 4;
+
+
+            if(strcmp(cpu->fetch.opcode_str,"ADD")==0 || strcmp(cpu->fetch.opcode_str,"ADDL")==0 ||
+            strcmp(cpu->fetch.opcode_str,"SUB")==0 || strcmp(cpu->fetch.opcode_str,"SUBL")==0 || 
+            strcmp(cpu->fetch.opcode_str,"MUL")==0 || strcmp(cpu->fetch.opcode_str,"LDR")==0 || 
+            strcmp(cpu->fetch.opcode_str,"DIV")==0 || strcmp(cpu->fetch.opcode_str,"AND")==0 ||  
+            strcmp(cpu->fetch.opcode_str,"OR")==0 || strcmp(cpu->fetch.opcode_str,"XOR")==0 ||  
+            strcmp(cpu->fetch.opcode_str,"LOAD")==0 || strcmp(cpu->fetch.opcode_str,"MOVC")==0){
+                //printf("\nCurrent rd:%d\tfetch rd:%d",current_ins->rd,cpu->fetch.rd);
+
+                validCheck[current_ins->rd]=1;
+
+            }
 
             /* Copy data from fetch latch to decode latch*/
             cpu->decode = cpu->fetch;
@@ -265,7 +294,6 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
         print_stage_content("Fetch", &cpu->fetch);
     }
 }
-
 /*
  * Decode Stage of APEX Pipeline
  *
@@ -292,8 +320,32 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
 // }
 // printf("\nArray length: %d",orderLen);
 // printf("\n------------------------------\n");
-    else
-    if (cpu->decode.has_insn && lsStalled ==0 && mulStalled==0)
+    //else
+
+if(cpu->fetch.has_insn && (strcmp(cpu->fetch.opcode_str,"LOAD")==0 || 
+    strcmp(cpu->fetch.opcode_str,"STORE")==0 || strcmp(cpu->fetch.opcode_str,"STR")==0 || 
+    strcmp(cpu->fetch.opcode_str,"LDR")==0)){
+        if(lsStalled==0){
+            proceed=1;
+        }else if(lsStalled==1){
+            proceed=0;
+        }
+    }else if(strcmp(cpu->fetch.opcode_str,"MUL")==0){
+            if(mulStalled==0){
+                proceed=1;
+            }else{
+                proceed=0;
+            }
+        }
+    else{
+        if(intStalled==0){
+            proceed=1;
+        }else{
+            proceed=0;
+        }
+    }
+
+    if (cpu->decode.has_insn && proceed==1)
     {
         if(arrLen==0){canProceed=1;}
         else{canProceed=0;}
@@ -327,7 +379,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -355,7 +407,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
                 
@@ -383,7 +435,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -410,7 +462,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -437,7 +489,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -464,7 +516,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -491,7 +543,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -514,7 +566,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                     regArray[arrLen] = cpu->decode.rd;
                     arrLen+=1;
                     /* MOVC doesn't have register operands */
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -541,7 +593,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 //printf("stalled:%d\n",stalled);
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
-                break;
+                    //break;
                 }
                 break;
             }
@@ -557,8 +609,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                         canProceed = 1;
                         stalled = 0;
                         }
-                    }
-                    
+                    }  
                 }
                 if(canProceed==1){
                     stalled=0;
@@ -569,7 +620,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -596,7 +647,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 //printf("stalled:%d\n",stalled);
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -623,7 +674,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 //printf("stalled:%d\n",stalled);
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -655,7 +706,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -684,7 +735,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
                     cpu->decode.rs3_value = cpu->regs[cpu->decode.rs3];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -711,7 +762,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 if(stalled==0){
                     cpu->decode.rs1_value = cpu->regs[cpu->decode.rs1];
                     cpu->decode.rs2_value = cpu->regs[cpu->decode.rs2];
-                    break;
+                    //break;
                 }
                 break;
             }
@@ -736,25 +787,28 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
         
 
         /* Copy data from decode latch to execute latch*/
+       
         if(stalled==0){
             if(mulStalled==0){
-            if(strcmp(cpu->decode.opcode_str,"MUL")==0){
-                //printf("\nMUL Order Length: %d\n",orderLen);
-                orderArray[orderLen]=mulIns;
-                orderLen+=1;
-                cpu->MUL_FU = cpu->decode;
-                cpu->decode.has_insn = FALSE;
-            }
+                if(strcmp(cpu->decode.opcode_str,"MUL")==0){
+                    //printf("\nMUL Order Length: %d\n",orderLen);
+                    orderArray[orderLen]=mulIns;
+                    orderLen+=1;
+                    cpu->MUL_FU = cpu->decode;
+                    print_stage_content("Decode/RF", &cpu->decode);
+                    cpu->decode.has_insn = FALSE;
+                }
             }
             if(lsStalled==0){ 
-            if(strcmp(cpu->decode.opcode_str,"LOAD")==0 || strcmp(cpu->decode.opcode_str,"STORE")==0 ||
-            strcmp(cpu->decode.opcode_str,"LDR")==0 || strcmp(cpu->decode.opcode_str,"STR")==0){
-                //printf("\nLS Order Length: %d\n",orderLen);
-                orderArray[orderLen]=lsIns;
-                orderLen+=1;
-                cpu->LOAD_STORE_FU = cpu->decode;
-                cpu->decode.has_insn = FALSE;
-            }
+                if(strcmp(cpu->decode.opcode_str,"LOAD")==0 || strcmp(cpu->decode.opcode_str,"STORE")==0 ||
+                strcmp(cpu->decode.opcode_str,"LDR")==0 || strcmp(cpu->decode.opcode_str,"STR")==0){
+                    //printf("\nLS Order Length: %d\n",orderLen);
+                    orderArray[orderLen]=lsIns;
+                    orderLen+=1;
+                    cpu->LOAD_STORE_FU = cpu->decode;
+                    print_stage_content("Decode/RF", &cpu->decode);
+                    cpu->decode.has_insn = FALSE;
+                }
             }
             if(intStalled==0){
                 if(strcmp(cpu->decode.opcode_str,"ADD")==0 || strcmp(cpu->decode.opcode_str,"SUB")==0 ||
@@ -765,28 +819,34 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 strcmp(cpu->decode.opcode_str,"NOP")==0 || strcmp(cpu->decode.opcode_str,"SUBL")==0 ||
                 strcmp(cpu->decode.opcode_str,"CMP")==0){
                     ////printf("\nint Order Length: %d\n",orderLen);
-                    if(lsCycle==3 || lsCycle==0){
-                    orderArray[orderLen]=intINS;
-                    orderLen+=1;
-                    cpu->INT_FU = cpu->decode;
-                    cpu->decode.has_insn = FALSE;
-                    }
+                    //if(lsCycle==3 || lsCycle==0){
+                        orderArray[orderLen]=intINS;
+                        orderLen+=1;
+                        cpu->INT_FU = cpu->decode;
+                        print_stage_content("Decode/RF", &cpu->decode);
+                        cpu->decode.has_insn = FALSE;
+                    //}
                 }
             }
-            if(strcmp(cpu->decode.opcode_str,"HALT")==0 && lsStalled==0 && mulStalled==0 && intStalled==0){
-                cpu->writeback = cpu->decode;
-                cpu->decode.has_insn=FALSE;
-            }
+            // printf("\nStalled:%d\t lsStalled:%d\t mulStalled:%d\t intStalled:%d\n ",stalled,lsStalled,mulStalled,intStalled);
+            // if(strcmp(cpu->decode.opcode_str,"HALT")==0 && lsStalled==0 && mulStalled==0 && intStalled==0){
+            //     cpu->writeback = cpu->decode;
+            //     cpu->decode.has_insn=FALSE;
+            // }
         }
+        // if(ENABLE_DISPLAY!=0){
+        //     if (ENABLE_DEBUG_MESSAGES || stalled==0)
+        //     {
+        //         print_stage_content("Decode/RF", &cpu->decode);
+        //     }else{
+        //         printf("Decode/RF      : EMPTY\n");
+        //         print_stage_content("Fetch", &cpu->fetch);
+        //     }
+        // }
 
-        if (ENABLE_DEBUG_MESSAGES)
-        {
-            print_stage_content("Decode/RF", &cpu->decode);
-        }else{
-            printf("Decode/RF      : EMPTY\n");
-            print_stage_content("Fetch", &cpu->fetch);
-        }
+       
     }
+    print_stage_content("Decode", &cpu->decode); 
     if(lsStalled==1){
         if (cpu->LOAD_STORE_FU.has_insn==TRUE)
         {
@@ -797,8 +857,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
     }
     if(mulStalled==1){
         if(cpu->MUL_FU.has_insn==TRUE){
-            //printf("\nMUL have an instruction:%s,R%d,R%d,R%d\ncycle: %d\n",
-            //cpu->decode.opcode_str, cpu->decode.rd, cpu->decode.rs1, cpu->decode.rs2,mulCycle);
+            //printf("\nMUL have cycle: %d\n",mulCycle);
             mulCycle+=1;
             //stalled=1;
         }
@@ -806,8 +865,13 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
     if(cpu->INT_FU.has_insn==TRUE){
         intCycle=1;
     }
-    
 
+    
+    //printf("lsStalled=%d && mulStalled=%d && intStalled=%d && orderLen=%d && regArray=%d\n",lsStalled,mulStalled,intStalled,orderLen,arrLen);    
+    if(strcmp(cpu->decode.opcode_str,"HALT")==0 && lsStalled==0 && mulStalled==0 && intStalled==0 && orderLen==0 && arrLen==0){
+        cpu->writeback = cpu->decode;
+        cpu->decode.has_insn=FALSE;
+    }
 //------------------
 // printf("\n----------------------------\nArray before execute: ");
 // for(int i = 0; i < arrLen; i++){
@@ -830,10 +894,10 @@ static void
 Apex_MUL_FU(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES){
     if(cpu->MUL_FU.has_insn == FALSE && ENABLE_DEBUG_MESSAGES==1){
         printf("MUL_FU         : EMPTY\n");
-    } else if(mulStalled==1  && mulCycle!=3){
+    } else if(mulStalled==1  && mulCycle!=2){
         print_stage_content("MUL_FU", &cpu->MUL_FU);
     }else
-    if (cpu->MUL_FU.has_insn || mulCycle==3)
+    if (cpu->MUL_FU.has_insn || mulCycle==2)
     {
         /* MUL_FU logic based on instruction type */
         switch (cpu->MUL_FU.opcode)
@@ -859,7 +923,7 @@ Apex_MUL_FU(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES){
         /* Copy data from MUL_FU latch to writeback latch*/
         if (orderArray[0]==7)
         {
-            if(mulCycle==3){
+            if(mulCycle>=2){
                 mulCycle=0;
                 cpu->writeback = cpu->MUL_FU;
                 cpu->MUL_FU.has_insn = FALSE;
@@ -918,7 +982,7 @@ Apex_LOAD_STORE_FU(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES){
             }
         }
         //printf("\norderArray[0]: %d\n",orderArray[0]);
-        if (orderArray[0]==9)
+        if (orderArray[0]==9 || lsCycle<3)
         {
             printf("cycle count is: %d\n",lsCycle);
             if(lsCycle==3){
@@ -1229,7 +1293,24 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
     if (cpu->writeback.has_insn)
     {   
 
-        
+         if(
+            strcmp(cpu->writeback.opcode_str,"ADD")==0  || strcmp(cpu->writeback.opcode_str,"ADDL")==0 ||
+            strcmp(cpu->writeback.opcode_str,"SUB")==0  || strcmp(cpu->writeback.opcode_str,"SUBL")==0 || 
+            strcmp(cpu->writeback.opcode_str,"MUL")==0  || strcmp(cpu->writeback.opcode_str,"LDR")==0 || 
+            strcmp(cpu->writeback.opcode_str,"DIV")==0  || strcmp(cpu->writeback.opcode_str,"AND")==0 ||  
+            strcmp(cpu->writeback.opcode_str,"OR")==0   || strcmp(cpu->writeback.opcode_str,"XOR")==0 ||  
+            strcmp(cpu->writeback.opcode_str,"LOAD")==0 || strcmp(cpu->writeback.opcode_str,"MOVC")==0){
+                //printf("\nCurrent rd:%d\tfetch rd:%d",cpu->writeback.rd,cpu->writeback.rd);
+
+                validCheck[cpu->writeback.rd]=0;
+
+            }
+            // printf("\nValid Check:");
+            // for(int i=0; i<16;i++){
+            //     printf(" %d ",validCheck[i]);
+            // }
+            // printf("\n");
+
         /* Write result to register file based on instruction type */
         switch (cpu->writeback.opcode)
         {
@@ -1676,7 +1757,7 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 //cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 // //printf("writeback rd: %d\n",cpu->writeback.rd);
-                 stalled=0;
+                stalled=0;
                 // //prevInstValue=0;
                 // for(int i=0; i<arrLen;i++){
                 //     if(regArray[i]==cpu->writeback.rd){
@@ -1845,6 +1926,7 @@ APEX_cpu_run(APEX_CPU *cpu)
     {
         if(ENABLE_SHOW_MEM){
             ENABLE_DEBUG_MESSAGES = 0;
+            
 
         }
         else if(ENABLE_SIMULATE){
@@ -1868,6 +1950,9 @@ APEX_cpu_run(APEX_CPU *cpu)
                 while(regNum!=argValue){
                             regNum+=4;
                             count+=1;
+                            if(count>=16){
+                                cpu->regs[count]=0;
+                            }
                             if(regNum>=argValue){
                                 break;
                             }
@@ -1893,12 +1978,14 @@ APEX_cpu_run(APEX_CPU *cpu)
         APEX_decode(cpu, ENABLE_DEBUG_MESSAGES);
         APEX_fetch(cpu, ENABLE_DEBUG_MESSAGES);
 
-        print_reg_file(cpu);
+        if(neverTrue==0){
+            print_reg_file(cpu);
+        }
 
 
         //printf("\n+++++given value: %d +++++++\n",cpu->single_step);
-        if (cpu->single_step==1 && ENABLE_DISPLAY ==1){
-            user_prompt_val= 'q';
+        if (cpu->single_step==1 && (ENABLE_DISPLAY ==1 || ENABLE_SIMULATE==1 )){
+            user_prompt_val= 'Q';
             if ((user_prompt_val == 'Q') || (user_prompt_val == 'q'))
             {
                 printf("APEX_CPU: Simulation Stopped, cycles = %d instructions = %d\n", cpu->clock, cpu->insn_completed);
@@ -1923,17 +2010,23 @@ APEX_cpu_run(APEX_CPU *cpu)
     }
 if(cpu->show_mem == 0){
     char* space = " ";
+     char* status= "";
     printf("\n=============== STATE OF ARCHITECTURAL REGISTER FILE ==========\n");
     for(int i=0;i<16;i++)
     {
-        printf("\n |%-2s REG[%-2d] %-2s |%-2s Value = %-4d %-2s| status= VALID |",
-        space,i,space,space,cpu->regs[i],space);
+        if(validCheck[i]==0){
+            status="VALID";
+        }else{
+            status="INVALID";
+        }
+        printf("\n |%-2s REG[%-2d] %-2s |%-2s Value = %-3d %-2s|  status= %-7s |",
+        space,i,space,space,cpu->regs[i],space,status);
     }
     printf("\n\n============== STATE OF DATA MEMORY =============\n");
 
     for(int i=0;i<100;i++)
     {
-        printf(" | MEM[%-5d]%-2s | Value=%-5d %-2s| \n",i,space,cpu->data_memory[i],space);
+        printf(" | MEM[%-2d]%-2s | Value=%-3d %-2s| \n",i,space,cpu->data_memory[i],space);
     }
     }
 }
