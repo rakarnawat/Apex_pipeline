@@ -21,7 +21,8 @@ int prevInstValue=0;
 int canProceed = 0;
 int argValue=0;
 int branchValue=0;
-
+int neverTrue=0;
+int validCheck[] ={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 
 int ENABLE_DEBUG_MESSAGES = 0;
@@ -229,6 +230,24 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             /* Update PC for next instruction */
             cpu->pc += 4;
 
+
+            if(strcmp(cpu->fetch.opcode_str,"ADD")==0 || strcmp(cpu->fetch.opcode_str,"ADDL")==0 ||
+            strcmp(cpu->fetch.opcode_str,"SUB")==0 || strcmp(cpu->fetch.opcode_str,"SUBL")==0 || 
+            strcmp(cpu->fetch.opcode_str,"MUL")==0 || strcmp(cpu->fetch.opcode_str,"LDR")==0 || 
+            strcmp(cpu->fetch.opcode_str,"DIV")==0 || strcmp(cpu->fetch.opcode_str,"AND")==0 ||  
+            strcmp(cpu->fetch.opcode_str,"OR")==0 || strcmp(cpu->fetch.opcode_str,"XOR")==0 ||  
+            strcmp(cpu->fetch.opcode_str,"LOAD")==0 || strcmp(cpu->fetch.opcode_str,"MOVC")==0){
+                //printf("\nCurrent rd:%d\tfetch rd:%d",current_ins->rd,cpu->fetch.rd);
+
+                validCheck[current_ins->rd]=1;
+
+            }
+            // printf("\nValid Check:");
+            // for(int i=0; i<16;i++){
+            //     printf(" %d ",validCheck[i]);
+            // }
+            // printf("\n");
+
             /* Copy data from fetch latch to decode latch*/
             cpu->decode = cpu->fetch;
             
@@ -257,13 +276,13 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
         printf("Decode/RF      : EMPTY\n");
     }
 //------------------
-printf("\n---------------------------\nArray: ");
-for(int i = 0; i < arrLen; i++){
-    printf(" %d ",regArray[i]);
-}
-printf("\nArray length: %d",arrLen);
-printf("\n-----------------------------\n");
-printf("Z flag : %d\n---------------------------\n", cpu->zero_flag);
+// printf("\n---------------------------\nArray: ");
+// for(int i = 0; i < arrLen; i++){
+//     printf(" %d ",regArray[i]);
+// }
+// printf("\nArray length: %d",arrLen);
+// printf("\n-----------------------------\n");
+// printf("Z flag : %d\n---------------------------\n", cpu->zero_flag);
 //------------------
 
     if (cpu->decode.has_insn)
@@ -697,24 +716,25 @@ printf("Z flag : %d\n---------------------------\n", cpu->zero_flag);
         cpu->execute = cpu->decode;
         cpu->decode.has_insn = FALSE;
         }
-
-        if (ENABLE_DEBUG_MESSAGES && stalled==0)
-        {
-            print_stage_content("Decode/RF", &cpu->decode);
-        }else{
-            printf("Decode/RF      : EMPTY\n");
-            print_stage_content("Fetch", &cpu->fetch);
+        if(ENABLE_DISPLAY!=0){
+            if (ENABLE_DEBUG_MESSAGES && stalled==0)
+            {
+                print_stage_content("Decode/RF", &cpu->decode);
+            }else{
+                printf("Decode/RF      : EMPTY\n");
+                print_stage_content("Fetch", &cpu->fetch);
+            }
         }
     }
 
 //------------------
-printf("\n----------------------------\nArray before execute: ");
-for(int i = 0; i < arrLen; i++){
-    printf(" %d ",regArray[i]);
-}
-printf("\nArray length: %d",arrLen);
-printf("\n------------------------------\n");
-printf("Z flag after decode: %d\n---------------------------\n", cpu->zero_flag);
+// printf("\n----------------------------\nArray before execute: ");
+// for(int i = 0; i < arrLen; i++){
+//     printf(" %d ",regArray[i]);
+// }
+// printf("\nArray length: %d",arrLen);
+// printf("\n------------------------------\n");
+// printf("Z flag after decode: %d\n---------------------------\n", cpu->zero_flag);
 //------------------
 
 
@@ -729,7 +749,7 @@ printf("Z flag after decode: %d\n---------------------------\n", cpu->zero_flag)
 static void
 APEX_execute(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
 {   
-    if(stalled==1 || (cpu->execute.has_insn == FALSE && ENABLE_DEBUG_MESSAGES==1)){
+    if((stalled==1 || (cpu->execute.has_insn == FALSE && ENABLE_DEBUG_MESSAGES==1)) && ENABLE_DISPLAY!=0){
         printf("Execute        : EMPTY\n");
     } else
     if (cpu->execute.has_insn)
@@ -740,76 +760,72 @@ APEX_execute(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             case OPCODE_ADD:
             {
                 cpu->execute.result_buffer = cpu->execute.rs1_value + cpu->execute.rs2_value;
-                printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",
-                  cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
+                //printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
                
                 /* Set the zero flag based on the result buffer */
                 if (cpu->execute.result_buffer == 0)
                 {
                     cpu->zero_flag = TRUE;
-                    printf("\n#####ADD setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####ADD setting zero flag to : %d ########\n", cpu->zero_flag);
                 } 
                 else 
                 {
                     cpu->zero_flag = FALSE;
-                    printf("\n#####ADD setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####ADD setting zero flag to : %d ########\n", cpu->zero_flag);
                 }
                 break;
             }
             case OPCODE_SUB:
             {
                 cpu->execute.result_buffer = cpu->execute.rs1_value - cpu->execute.rs2_value;
-printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",
-                  cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
+                //printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
   
                 /* Set the zero flag based on the result buffer */
                 if (cpu->execute.result_buffer == 0)
                 {
                     cpu->zero_flag = TRUE;
-                    printf("\n#####SUB setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####SUB setting zero flag to : %d ########\n", cpu->zero_flag);
                 } 
                 else 
                 {
                     cpu->zero_flag = FALSE;
-                    printf("\n#####SUB setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####SUB setting zero flag to : %d ########\n", cpu->zero_flag);
                 }
                 break;
             }
             case OPCODE_MUL:
             {
                 cpu->execute.result_buffer = cpu->execute.rs1_value * cpu->execute.rs2_value;
-printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",
-                  cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
+                //printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
   
                 /* Set the zero flag based on the result buffer */
                 if (cpu->execute.result_buffer == 0)
                 {
                     cpu->zero_flag = TRUE;
-                    printf("\n#####MUL setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####MUL setting zero flag to : %d ########\n", cpu->zero_flag);
                 } 
                 else 
                 {
                     cpu->zero_flag = FALSE;
-                    printf("\n#####MUL setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####MUL setting zero flag to : %d ########\n", cpu->zero_flag);
                 }
                 break;
             }
             case OPCODE_DIV:
             {
                 cpu->execute.result_buffer = cpu->execute.rs1_value / cpu->execute.rs2_value;
-printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",
-                  cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
+                //printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
   
                 /* Set the zero flag based on the result buffer */
                 if (cpu->execute.result_buffer == 0)
                 {
                     cpu->zero_flag = TRUE;
-                    printf("\n#####DIV setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####DIV setting zero flag to : %d ########\n", cpu->zero_flag);
                 } 
                 else 
                 {
                     cpu->zero_flag = FALSE;
-                    printf("\n#####DIV setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####DIV setting zero flag to : %d ########\n", cpu->zero_flag);
                 }
                 break;
             }
@@ -817,75 +833,71 @@ printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->e
             {
                 cpu->execute.result_buffer = cpu->execute.rs1_value & cpu->execute.rs2_value;
 
-  printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",
-                  cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
+                //printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
                 /* Set the zero flag based on the result buffer */
                 if (cpu->execute.result_buffer == 0)
                 {
                     cpu->zero_flag = TRUE;
-                    printf("\n#####AND setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####AND setting zero flag to : %d ########\n", cpu->zero_flag);
                 } 
                 else 
                 {
                     cpu->zero_flag = FALSE;
-                    printf("\n#####AND setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####AND setting zero flag to : %d ########\n", cpu->zero_flag);
                 }
                 break;
             }
             case OPCODE_OR:
             {
                 cpu->execute.result_buffer = cpu->execute.rs1_value | cpu->execute.rs2_value;
-printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",
-                  cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
+                //printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
   
                 /* Set the zero flag based on the result buffer */
                 if (cpu->execute.result_buffer == 0)
                 {
                     cpu->zero_flag = TRUE;
-                    printf("\n#####OR setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####OR setting zero flag to : %d ########\n", cpu->zero_flag);
                 } 
                 else 
                 {
                     cpu->zero_flag = FALSE;
-                    printf("\n#####OR setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####OR setting zero flag to : %d ########\n", cpu->zero_flag);
                 }
                 break;
             }
             case OPCODE_XOR:
             {
                 cpu->execute.result_buffer = cpu->execute.rs1_value ^ cpu->execute.rs2_value;
-printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",
-                  cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
+                //printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.rs2_value: %d\n---------------------------------------\n",cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.rs2_value);
   
                 /* Set the zero flag based on the result buffer */
                 if (cpu->execute.result_buffer == 0)
                 {
                     cpu->zero_flag = TRUE;
-                    printf("\n#####XOR setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####XOR setting zero flag to : %d ########\n", cpu->zero_flag);
                 } 
                 else 
                 {
                     cpu->zero_flag = FALSE;
-                    printf("\n#####XOR setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####XOR setting zero flag to : %d ########\n", cpu->zero_flag);
                 }
                 break;
             }
             case OPCODE_MOVC: 
             {
                 cpu->execute.result_buffer = cpu->execute.imm;
-printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.imm: %d\n---------------------------------------\n",
-                  cpu->execute.result_buffer,cpu->execute.imm);
+                //printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.imm: %d\n---------------------------------------\n",cpu->execute.result_buffer,cpu->execute.imm);
   
                 /* Set the zero flag based on the result buffer */
                 if (cpu->execute.result_buffer == 0)
                 {
                     cpu->zero_flag = TRUE;
-                    printf("\n#####MOVC setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####MOVC setting zero flag to : %d ########\n", cpu->zero_flag);
                 } 
                 else 
                 {
                     cpu->zero_flag = FALSE;
-                    printf("\n#####MOVC setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####MOVC setting zero flag to : %d ########\n", cpu->zero_flag);
                 }
                 break;
             }
@@ -943,27 +955,25 @@ printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->e
             case OPCODE_ADDL:
             {
                 cpu->execute.result_buffer = cpu->execute.rs1_value + cpu->execute.imm;
-printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.imm: %d\n---------------------------------------\n",
-                  cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.imm);
+                //printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.imm: %d\n---------------------------------------\n",cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.imm);
   
                 /* Set the zero flag based on the result buffer */
                 if (cpu->execute.result_buffer == 0)
                 {
                     cpu->zero_flag = TRUE;
-                    printf("\n#####ADDL setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####ADDL setting zero flag to : %d ########\n", cpu->zero_flag);
                 } 
                 else 
                 {
                     cpu->zero_flag = FALSE;
-                    printf("\n#####ADDL setting zero flag to : %d ########\n", cpu->zero_flag);
+                    //printf("\n#####ADDL setting zero flag to : %d ########\n", cpu->zero_flag);
                 }
                 break;
             }
             case OPCODE_SUBL:
             {
                 cpu->execute.result_buffer = cpu->execute.rs1_value - cpu->execute.imm;
-printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.imm: %d\n---------------------------------------\n",
-                  cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.imm);
+                //printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->execute.rs1_value: %d\ncpu->execute.imm: %d\n---------------------------------------\n",cpu->execute.result_buffer,cpu->execute.rs1_value,cpu->execute.imm);
   
                 /* Set the zero flag based on the result buffer */
                 if (cpu->execute.result_buffer == 0)
@@ -974,7 +984,7 @@ printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->e
                 {
                     cpu->zero_flag = FALSE;
                 }
-                printf("\n#####SUBL setting zero flag to : %d ########\n", cpu->zero_flag);
+                //printf("\n#####SUBL setting zero flag to : %d ########\n", cpu->zero_flag);
                 break;
             }
             case OPCODE_NOP:
@@ -1007,7 +1017,7 @@ printf("\n------------------------------\ncpu->execute.result_buffer: %d\ncpu->e
                 {
                     cpu->zero_flag = FALSE;
                 }
-                printf("\n#####CMP setting zero flag to : %d ########\n", cpu->zero_flag);
+                //printf("\n#####CMP setting zero flag to : %d ########\n", cpu->zero_flag);
                 break;
             }
             case OPCODE_STR:
@@ -1151,7 +1161,27 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
         printf("Writeback      : EMPTY\n");
     }
     if (cpu->writeback.has_insn)
-    {   
+    {
+
+        
+            if(
+            strcmp(cpu->writeback.opcode_str,"ADD")==0  || strcmp(cpu->writeback.opcode_str,"ADDL")==0 ||
+            strcmp(cpu->writeback.opcode_str,"SUB")==0  || strcmp(cpu->writeback.opcode_str,"SUBL")==0 || 
+            strcmp(cpu->writeback.opcode_str,"MUL")==0  || strcmp(cpu->writeback.opcode_str,"LDR")==0 || 
+            strcmp(cpu->writeback.opcode_str,"DIV")==0  || strcmp(cpu->writeback.opcode_str,"AND")==0 ||  
+            strcmp(cpu->writeback.opcode_str,"OR")==0   || strcmp(cpu->writeback.opcode_str,"XOR")==0 ||  
+            strcmp(cpu->writeback.opcode_str,"LOAD")==0 || strcmp(cpu->writeback.opcode_str,"MOVC")==0){
+                //printf("\nCurrent rd:%d\tfetch rd:%d",cpu->writeback.rd,cpu->writeback.rd);
+
+                validCheck[cpu->writeback.rd]=0;
+
+            }
+            // printf("\nValid Check:");
+            // for(int i=0; i<16;i++){
+            //     printf(" %d ",validCheck[i]);
+            // }
+            // printf("\n");
+   
 
         
         /* Write result to register file based on instruction type */
@@ -1593,9 +1623,13 @@ APEX_cpu_run(APEX_CPU *cpu)
                 while(regNum!=argValue){
                             regNum+=4;
                             count+=1;
+                            if(count>=16){
+                                cpu->regs[count]=0;
+                            }
                             if(regNum>=argValue){
                                 break;
                             }
+                            
                         }
                 //printf("cpu->single_step: %d ", argv3 );
                 printf("-------------------------------------------------------------------------------\n");
@@ -1615,11 +1649,13 @@ APEX_cpu_run(APEX_CPU *cpu)
         APEX_decode(cpu, ENABLE_DEBUG_MESSAGES);
         APEX_fetch(cpu, ENABLE_DEBUG_MESSAGES);
 
-        print_reg_file(cpu);
+        if(neverTrue==1){
+            print_reg_file(cpu);
+        }
 
 
         //printf("\n+++++given value: %d +++++++\n",cpu->single_step);
-        if (cpu->single_step==1 && ENABLE_DISPLAY ==1){
+        if (cpu->single_step==1 && (ENABLE_DISPLAY ==1 || ENABLE_SIMULATE==1 )){
             user_prompt_val= 'q';
             if ((user_prompt_val == 'Q') || (user_prompt_val == 'q'))
             {
@@ -1645,17 +1681,23 @@ APEX_cpu_run(APEX_CPU *cpu)
     }
 if(cpu->show_mem == 0){
     char* space = " ";
+    char* status= "";
     printf("\n=============== STATE OF ARCHITECTURAL REGISTER FILE ==========\n");
     for(int i=0;i<16;i++)
     {
-        printf("\n |%-2s REG[%-2d] %-2s |%-2s Value = %-4d %-2s| status= VALID |",
-        space,i,space,space,cpu->regs[i],space);
+        if(validCheck[i]==0){
+            status="VALID";
+        }else{
+            status="INVALID";
+        }
+        printf("\n |%-2s REG[%-2d] %-2s |%-2s Value = %-3d %-2s|  status= %-7s |",
+        space,i,space,space,cpu->regs[i],space,status);
     }
-    printf("\n\n============== STATE OF DATA MEMORY =============\n");
+    printf("\n\n================ STATE OF DATA MEMORY ================\n");
 
     for(int i=0;i<100;i++)
     {
-        printf(" | MEM[%-5d]%-2s | Value=%-5d %-2s| \n",i,space,cpu->data_memory[i],space);
+        printf(" | MEM[%-2d]%-2s | Value=%-3d %-2s| \n",i,space,cpu->data_memory[i],space);
     }
     }
 }
