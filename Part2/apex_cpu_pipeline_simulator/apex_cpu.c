@@ -217,9 +217,10 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
     //     printf("cpu->fetch.has_insn == TRUE\n");
     // }
 
-    if(cpu->fetch.has_insn == FALSE && ENABLE_DEBUG_MESSAGES==1){
+    if(cpu->fetch.has_insn == FALSE){
         printf("Fetch          : EMPTY\n");
     }
+    
         
     if(stalled==0 && proceed==1){
         if (cpu->fetch.has_insn)
@@ -232,6 +233,7 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 /* Skip this cycle*/
                 return;
             }
+            
 
             /* Store current PC in fetch latch */
             cpu->fetch.pc = cpu->pc;
@@ -268,7 +270,7 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             strcmp(cpu->fetch.opcode_str,"SUB")==0 || strcmp(cpu->fetch.opcode_str,"SUBL")==0 || 
             strcmp(cpu->fetch.opcode_str,"MUL")==0 || strcmp(cpu->fetch.opcode_str,"LDR")==0 || 
             strcmp(cpu->fetch.opcode_str,"DIV")==0 || strcmp(cpu->fetch.opcode_str,"AND")==0 ||  
-            strcmp(cpu->fetch.opcode_str,"OR")==0 || strcmp(cpu->fetch.opcode_str,"XOR")==0 ||  
+            strcmp(cpu->fetch.opcode_str,"OR")==0 || strcmp(cpu->fetch.opcode_str,"EXOR")==0 ||  
             strcmp(cpu->fetch.opcode_str,"LOAD")==0 || strcmp(cpu->fetch.opcode_str,"MOVC")==0){
                 //printf("\nCurrent rd:%d\tfetch rd:%d",current_ins->rd,cpu->fetch.rd);
 
@@ -282,7 +284,7 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             if (ENABLE_DEBUG_MESSAGES)
             {    
                 print_stage_content("Fetch", &cpu->fetch);
-            }
+            }   
 
             /* Stop fetching new instructions if HALT is fetched */
             if (cpu->fetch.opcode == OPCODE_HALT)
@@ -291,8 +293,10 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
         }
     }else{
-        print_stage_content("Fetch", &cpu->fetch);
+        printf("Fetch          : STALLED\n");
+
     }
+    
 }
 /*
  * Decode Stage of APEX Pipeline
@@ -304,6 +308,8 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
 {   
     if(cpu->decode.has_insn == FALSE && ENABLE_DEBUG_MESSAGES==1){
         printf("Decode/RF      : EMPTY\n");
+    }else{
+        print_stage_content("Decode/RF", &cpu->decode);
     }
 //------------------
 // printf("\n---------------------------\nArray: ");
@@ -795,7 +801,7 @@ if(cpu->fetch.has_insn && (strcmp(cpu->fetch.opcode_str,"LOAD")==0 ||
                     orderArray[orderLen]=mulIns;
                     orderLen+=1;
                     cpu->MUL_FU = cpu->decode;
-                    print_stage_content("Decode/RF", &cpu->decode);
+                    //print_stage_content("Decode/RF", &cpu->decode);
                     cpu->decode.has_insn = FALSE;
                 }
             }
@@ -806,24 +812,24 @@ if(cpu->fetch.has_insn && (strcmp(cpu->fetch.opcode_str,"LOAD")==0 ||
                     orderArray[orderLen]=lsIns;
                     orderLen+=1;
                     cpu->LOAD_STORE_FU = cpu->decode;
-                    print_stage_content("Decode/RF", &cpu->decode);
+                    //print_stage_content("Decode/RF", &cpu->decode);
                     cpu->decode.has_insn = FALSE;
                 }
             }
             if(intStalled==0){
                 if(strcmp(cpu->decode.opcode_str,"ADD")==0 || strcmp(cpu->decode.opcode_str,"SUB")==0 ||
                 strcmp(cpu->decode.opcode_str,"DIV")==0 || strcmp(cpu->decode.opcode_str,"AND")==0 ||
-                strcmp(cpu->decode.opcode_str,"OR")==0 || strcmp(cpu->decode.opcode_str,"XOR")==0 ||
+                strcmp(cpu->decode.opcode_str,"OR")==0 || strcmp(cpu->decode.opcode_str,"EXOR")==0 ||
                 strcmp(cpu->decode.opcode_str,"MOVC")==0 || strcmp(cpu->decode.opcode_str,"BZ")==0 ||
                 strcmp(cpu->decode.opcode_str,"BNZ")==0 || strcmp(cpu->decode.opcode_str,"ADDL")==0 ||
                 strcmp(cpu->decode.opcode_str,"NOP")==0 || strcmp(cpu->decode.opcode_str,"SUBL")==0 ||
-                strcmp(cpu->decode.opcode_str,"CMP")==0){
+                strcmp(cpu->decode.opcode_str,"CMP")==0 || strcmp(cpu->decode.opcode_str,"HALT")==0){
                     ////printf("\nint Order Length: %d\n",orderLen);
                     //if(lsCycle==3 || lsCycle==0){
                         orderArray[orderLen]=intINS;
                         orderLen+=1;
                         cpu->INT_FU = cpu->decode;
-                        print_stage_content("Decode/RF", &cpu->decode);
+                        //print_stage_content("Decode/RF", &cpu->decode);
                         cpu->decode.has_insn = FALSE;
                     //}
                 }
@@ -844,9 +850,9 @@ if(cpu->fetch.has_insn && (strcmp(cpu->fetch.opcode_str,"LOAD")==0 ||
         //     }
         // }
 
-       
+      
     }
-    print_stage_content("Decode", &cpu->decode); 
+    //print_stage_content("Decode", &cpu->decode); 
     if(lsStalled==1){
         if (cpu->LOAD_STORE_FU.has_insn==TRUE)
         {
@@ -900,26 +906,7 @@ Apex_MUL_FU(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES){
     if (cpu->MUL_FU.has_insn || mulCycle==2)
     {
         /* MUL_FU logic based on instruction type */
-        switch (cpu->MUL_FU.opcode)
-        {   
-            case OPCODE_MUL:
-            {
-                cpu->MUL_FU.result_buffer = cpu->MUL_FU.rs1_value * cpu->MUL_FU.rs2_value;
-                //printf("\n------------------------------\ncpu->MUL_FU.result_buffer: %d\ncpu->MUL_FU.rs1_value: %d\ncpu->MUL_FU.rs2_value: %d\n---------------------------------------\n",cpu->MUL_FU.result_buffer,cpu->MUL_FU.rs1_value,cpu->MUL_FU.rs2_value);
-  
-                /* Set the zero flag based on the result buffer */
-                if (cpu->MUL_FU.result_buffer == 0)
-                {
-                    cpu->zero_flag = TRUE;
-                } 
-                else 
-                {
-                    cpu->zero_flag = FALSE;
-                }
-                //printf("\n#####MUL setting zero flag to : %d ########\n", cpu->zero_flag);
-                break;
-            }
-        }
+        
         /* Copy data from MUL_FU latch to writeback latch*/
         if (orderArray[0]==7)
         {
@@ -927,6 +914,7 @@ Apex_MUL_FU(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES){
                 mulCycle=0;
                 cpu->writeback = cpu->MUL_FU;
                 cpu->MUL_FU.has_insn = FALSE;
+                mulStalled=0;
 
             }else{
                 mulStalled=1;
@@ -949,42 +937,11 @@ Apex_LOAD_STORE_FU(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES){
         print_stage_content("LOAD/STORE", &cpu->LOAD_STORE_FU);
     }else
     if(cpu->LOAD_STORE_FU.has_insn || lsCycle==3){
-        switch (cpu->LOAD_STORE_FU.opcode)
-        {
-            case OPCODE_LOAD:
-            {
-                cpu->LOAD_STORE_FU.memory_address = cpu->LOAD_STORE_FU.rs1_value + cpu->LOAD_STORE_FU.imm;
-                /* Read/LOAD from data writeback */
-                cpu->LOAD_STORE_FU.result_buffer = cpu->data_memory[cpu->LOAD_STORE_FU.memory_address];
-                break;
-            }
-            case OPCODE_STORE:
-            {
-                cpu->LOAD_STORE_FU.memory_address = cpu->LOAD_STORE_FU.rs2_value + cpu->LOAD_STORE_FU.imm;
-                /* Store to data LOAD_STORE_FU */
-                cpu->data_memory[cpu->LOAD_STORE_FU.memory_address] = cpu->LOAD_STORE_FU.rs1_value;
-                break;
-            }
-            case OPCODE_STR:
-            {
-                cpu->LOAD_STORE_FU.memory_address = cpu->LOAD_STORE_FU.rs1_value + cpu->LOAD_STORE_FU.rs2_value;
-                /* Store/STR to data LOAD_STORE_FU */
-                cpu->data_memory[cpu->LOAD_STORE_FU.memory_address] = cpu->LOAD_STORE_FU.rs3_value;
-                break;
-            }
-            case OPCODE_LDR:
-            {
-                cpu->LOAD_STORE_FU.memory_address = cpu->LOAD_STORE_FU.rs1_value + cpu->LOAD_STORE_FU.rs2_value;
-                
-                /* Read/LDR from data LOAD_STORE_FU */
-                cpu->LOAD_STORE_FU.result_buffer = cpu->data_memory[cpu->LOAD_STORE_FU.memory_address];
-                break;
-            }
-        }
+        
         //printf("\norderArray[0]: %d\n",orderArray[0]);
         if (orderArray[0]==9 || lsCycle<3)
         {
-            printf("cycle count is: %d\n",lsCycle);
+            //printf("cycle count is: %d\n",lsCycle);
             if(lsCycle==3){
                 //printf("\nin load store to writeback\n");
                 /* Copy data from LOAD_STORE latch to LOAD_STORE_FU latch*/
@@ -1017,138 +974,12 @@ APEX_INT_FU(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
     }else
     if (cpu->INT_FU.has_insn || intCycle==1)
     {
-        /* INT_FU logic based on instruction type */
         switch (cpu->INT_FU.opcode)
         {
-            case OPCODE_ADD:
-            {
-                cpu->INT_FU.result_buffer = cpu->INT_FU.rs1_value + cpu->INT_FU.rs2_value;
-                //printf("\n------------------------------\ncpu->INT_FU.result_buffer: %d\ncpu->INT_FU.rs1_value: %d\ncpu->INT_FU.rs2_value: %d\n---------------------------------------\n",cpu->INT_FU.result_buffer,cpu->INT_FU.rs1_value,cpu->INT_FU.rs2_value);
-               
-                /* Set the zero flag based on the result buffer */
-                if (cpu->INT_FU.result_buffer == 0)
-                {
-                    cpu->zero_flag = TRUE;
-                    //printf("\n#####ADD setting zero flag to : %d ########\n", cpu->zero_flag);
-                } 
-                else 
-                {
-                    cpu->zero_flag = FALSE;
-                    //printf("\n#####ADD setting zero flag to : %d ########\n", cpu->zero_flag);
-                }
-                break;
-            }
-            case OPCODE_SUB:
-            {
-                cpu->INT_FU.result_buffer = cpu->INT_FU.rs1_value - cpu->INT_FU.rs2_value;
-                //printf("\n------------------------------\ncpu->INT_FU.result_buffer: %d\ncpu->INT_FU.rs1_value: %d\ncpu->INT_FU.rs2_value: %d\n---------------------------------------\n",cpu->INT_FU.result_buffer,cpu->INT_FU.rs1_value,cpu->INT_FU.rs2_value);
-  
-                /* Set the zero flag based on the result buffer */
-                if (cpu->INT_FU.result_buffer == 0)
-                {
-                    cpu->zero_flag = TRUE;
-                    //printf("\n#####SUB setting zero flag to : %d ########\n", cpu->zero_flag);
-                } 
-                else 
-                {
-                    cpu->zero_flag = FALSE;
-                    //printf("\n#####SUB setting zero flag to : %d ########\n", cpu->zero_flag);
-                }
-                break;
-            }
-            case OPCODE_DIV:
-            {
-                cpu->INT_FU.result_buffer = cpu->INT_FU.rs1_value / cpu->INT_FU.rs2_value;
-                ////printf("\n------------------------------\ncpu->INT_FU.result_buffer: %d\ncpu->INT_FU.rs1_value: %d\ncpu->INT_FU.rs2_value: %d\n---------------------------------------\n",cpu->INT_FU.result_buffer,cpu->INT_FU.rs1_value,cpu->INT_FU.rs2_value);
-  
-                /* Set the zero flag based on the result buffer */
-                if (cpu->INT_FU.result_buffer == 0)
-                {
-                    cpu->zero_flag = TRUE;
-                    //printf("\n#####DIV setting zero flag to : %d ########\n", cpu->zero_flag);
-                } 
-                else 
-                {
-                    cpu->zero_flag = FALSE;
-                    //printf("\n#####DIV setting zero flag to : %d ########\n", cpu->zero_flag);
-                }
-                break;
-            }
-            case OPCODE_AND:
-            {
-                cpu->INT_FU.result_buffer = cpu->INT_FU.rs1_value & cpu->INT_FU.rs2_value;
-
-                //printf("\n------------------------------\ncpu->INT_FU.result_buffer: %d\ncpu->INT_FU.rs1_value: %d\ncpu->INT_FU.rs2_value: %d\n---------------------------------------\n",cpu->INT_FU.result_buffer,cpu->INT_FU.rs1_value,cpu->INT_FU.rs2_value);
-                /* Set the zero flag based on the result buffer */
-                if (cpu->INT_FU.result_buffer == 0)
-                {
-                    cpu->zero_flag = TRUE;
-                    //printf("\n#####AND setting zero flag to : %d ########\n", cpu->zero_flag);
-                } 
-                else 
-                {
-                    cpu->zero_flag = FALSE;
-                    //printf("\n#####AND setting zero flag to : %d ########\n", cpu->zero_flag);
-                }
-                break;
-            }
-            case OPCODE_OR:
-            {
-                cpu->INT_FU.result_buffer = cpu->INT_FU.rs1_value | cpu->INT_FU.rs2_value;
-                //printf("\n------------------------------\ncpu->INT_FU.result_buffer: %d\ncpu->INT_FU.rs1_value: %d\ncpu->INT_FU.rs2_value: %d\n---------------------------------------\n",cpu->INT_FU.result_buffer,cpu->INT_FU.rs1_value,cpu->INT_FU.rs2_value);
-  
-                /* Set the zero flag based on the result buffer */
-                if (cpu->INT_FU.result_buffer == 0)
-                {
-                    cpu->zero_flag = TRUE;
-                    //printf("\n#####OR setting zero flag to : %d ########\n", cpu->zero_flag);
-                } 
-                else 
-                {
-                    cpu->zero_flag = FALSE;
-                    //printf("\n#####OR setting zero flag to : %d ########\n", cpu->zero_flag);
-                }
-                break;
-            }
-            case OPCODE_XOR:
-            {
-                cpu->INT_FU.result_buffer = cpu->INT_FU.rs1_value ^ cpu->INT_FU.rs2_value;
-                //printf("\n------------------------------\ncpu->INT_FU.result_buffer: %d\ncpu->INT_FU.rs1_value: %d\ncpu->INT_FU.rs2_value: %d\n---------------------------------------\n",cpu->INT_FU.result_buffer,cpu->INT_FU.rs1_value,cpu->INT_FU.rs2_value);
-  
-                /* Set the zero flag based on the result buffer */
-                if (cpu->INT_FU.result_buffer == 0)
-                {
-                    cpu->zero_flag = TRUE;
-                    //printf("\n#####XOR setting zero flag to : %d ########\n", cpu->zero_flag);
-                } 
-                else 
-                {
-                    cpu->zero_flag = FALSE;
-                    //printf("\n#####XOR setting zero flag to : %d ########\n", cpu->zero_flag);
-                }
-                break;
-            }
-            case OPCODE_MOVC: 
-            {
-                cpu->INT_FU.result_buffer = cpu->INT_FU.imm;
-                //printf("\n------------------------------\ncpu->INT_FU.result_buffer: %d\ncpu->INT_FU.imm: %d\n---------------------------------------\n",cpu->INT_FU.result_buffer,cpu->INT_FU.imm);
-  
-                /* Set the zero flag based on the result buffer */
-                if (cpu->INT_FU.result_buffer == 0)
-                {
-                    cpu->zero_flag = TRUE;
-                    //printf("\n#####MOVC setting zero flag to : %d ########\n", cpu->zero_flag);
-                } 
-                else 
-                {
-                    cpu->zero_flag = FALSE;
-                    //printf("\n#####MOVC setting zero flag to : %d ########\n", cpu->zero_flag);
-                }
-                break;
-            }
+            
             case OPCODE_BZ:
             {
-                if (cpu->zero_flag == TRUE)
+            if (cpu->zero_flag == TRUE)
                 {
                     /* Calculate new PC, and send it to fetch unit */
                     cpu->pc = cpu->INT_FU.pc + cpu->INT_FU.imm;
@@ -1167,7 +998,6 @@ APEX_INT_FU(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_BNZ:
             {
-                
                 if (cpu->zero_flag == FALSE)
                 {
                     /* Calculate new PC, and send it to fetch unit */
@@ -1185,77 +1015,6 @@ APEX_INT_FU(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 }
                 break;
             }
-            case OPCODE_ADDL:
-            {
-                cpu->INT_FU.result_buffer = cpu->INT_FU.rs1_value + cpu->INT_FU.imm;
-                //printf("\n------------------------------\ncpu->INT_FU.result_buffer: %d\ncpu->INT_FU.rs1_value: %d\ncpu->INT_FU.imm: %d\n---------------------------------------\n",cpu->INT_FU.result_buffer,cpu->INT_FU.rs1_value,cpu->INT_FU.imm);
-  
-                /* Set the zero flag based on the result buffer */
-                if (cpu->INT_FU.result_buffer == 0)
-                {
-                    cpu->zero_flag = TRUE;
-                    //printf("\n#####ADDL setting zero flag to : %d ########\n", cpu->zero_flag);
-                } 
-                else 
-                {
-                    cpu->zero_flag = FALSE;
-                    //printf("\n#####ADDL setting zero flag to : %d ########\n", cpu->zero_flag);
-                }
-                break;
-            }
-            case OPCODE_SUBL:
-            {
-                cpu->INT_FU.result_buffer = cpu->INT_FU.rs1_value - cpu->INT_FU.imm;
-                //printf("\n------------------------------\ncpu->INT_FU.result_buffer: %d\ncpu->INT_FU.rs1_value: %d\ncpu->INT_FU.imm: %d\n---------------------------------------\n",cpu->INT_FU.result_buffer,cpu->INT_FU.rs1_value,cpu->INT_FU.imm);
-  
-                /* Set the zero flag based on the result buffer */
-                if (cpu->INT_FU.result_buffer == 0)
-                {
-                    cpu->zero_flag = TRUE;
-                } 
-                else 
-                {
-                    cpu->zero_flag = FALSE;
-                }
-                //printf("\n#####SUBL setting zero flag to : %d ########\n", cpu->zero_flag);
-                break;
-            }
-            case OPCODE_NOP:
-            {
-                //do noting
-                break;
-            }
-            case OPCODE_CMP:
-            {
-                //cpu->INT_FU.result_buffer = cpu->INT_FU.rs1_value - cpu->INT_FU.rs2_value;
-                if(cpu->INT_FU.rs1_value==cpu->INT_FU.rs2_value){
-                    //set z flag to 1
-                    cpu->INT_FU.result_buffer=0;
-
-                    //cpu->zero_flag = TRUE;
-                    //cpu->p_flag = FALSE;
-
-                }else{
-                    cpu->INT_FU.result_buffer=1;
-                    //set p flag to 1
-                    //cpu->zero_flag = FALSE;
-                    //cpu->p_flag = TRUE;
-
-                }
-                if (cpu->INT_FU.result_buffer == 0)
-                {
-                    cpu->zero_flag = TRUE;
-                } 
-                else 
-                {
-                    cpu->zero_flag = FALSE;
-                }
-                //printf("\n#####CMP setting zero flag to : %d ########\n", cpu->zero_flag);
-                //cmp
-                cpu->INT_FU.result_buffer = cpu->zero_flag;
-                break;
-            }
-        
         }
 
         if(orderArray[0]==5){
@@ -1298,7 +1057,7 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             strcmp(cpu->writeback.opcode_str,"SUB")==0  || strcmp(cpu->writeback.opcode_str,"SUBL")==0 || 
             strcmp(cpu->writeback.opcode_str,"MUL")==0  || strcmp(cpu->writeback.opcode_str,"LDR")==0 || 
             strcmp(cpu->writeback.opcode_str,"DIV")==0  || strcmp(cpu->writeback.opcode_str,"AND")==0 ||  
-            strcmp(cpu->writeback.opcode_str,"OR")==0   || strcmp(cpu->writeback.opcode_str,"XOR")==0 ||  
+            strcmp(cpu->writeback.opcode_str,"OR")==0   || strcmp(cpu->writeback.opcode_str,"EXOR")==0 ||  
             strcmp(cpu->writeback.opcode_str,"LOAD")==0 || strcmp(cpu->writeback.opcode_str,"MOVC")==0){
                 //printf("\nCurrent rd:%d\tfetch rd:%d",cpu->writeback.rd,cpu->writeback.rd);
 
@@ -1314,8 +1073,24 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
         /* Write result to register file based on instruction type */
         switch (cpu->writeback.opcode)
         {
+            
             case OPCODE_ADD:
             {
+                   cpu->writeback.result_buffer = cpu->writeback.rs1_value + cpu->writeback.rs2_value;
+                //printf("\n------------------------------\ncpu->writeback.result_buffer: %d\ncpu->writeback.rs1_value: %d\ncpu->writeback.rs2_value: %d\n---------------------------------------\n",cpu->writeback.result_buffer,cpu->writeback.rs1_value,cpu->writeback.rs2_value);
+               
+                /* Set the zero flag based on the result buffer */
+                if (cpu->writeback.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                    //printf("\n#####ADD setting zero flag to : %d ########\n", cpu->zero_flag);
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                    //printf("\n#####ADD setting zero flag to : %d ########\n", cpu->zero_flag);
+                }
+             
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
 //                 //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1347,6 +1122,21 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_SUB:
             {
+                
+                cpu->writeback.result_buffer = cpu->writeback.rs1_value - cpu->writeback.rs2_value;
+                //printf("\n------------------------------\ncpu->writeback.result_buffer: %d\ncpu->writeback.rs1_value: %d\ncpu->writeback.rs2_value: %d\n---------------------------------------\n",cpu->writeback.result_buffer,cpu->writeback.rs1_value,cpu->writeback.rs2_value);
+  
+                /* Set the zero flag based on the result buffer */
+                if (cpu->writeback.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                    //printf("\n#####SUB setting zero flag to : %d ########\n", cpu->zero_flag);
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                    //printf("\n#####SUB setting zero flag to : %d ########\n", cpu->zero_flag);
+                }
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 // //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1377,6 +1167,18 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_MUL:
             {
+                cpu->writeback.result_buffer = cpu->writeback.rs1_value * cpu->writeback.rs2_value;
+                //printf("\n------------------------------\ncpu->writeback.result_buffer: %d\ncpu->writeback.rs1_value: %d\ncpu->writeback.rs2_value: %d\n---------------------------------------\n",cpu->writeback.result_buffer,cpu->writeback.rs1_value,cpu->writeback.rs2_value);
+  
+                /* Set the zero flag based on the result buffer */
+                if (cpu->writeback.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                }
                 
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
@@ -1408,6 +1210,20 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_DIV:
             {
+                cpu->writeback.result_buffer = cpu->writeback.rs1_value / cpu->writeback.rs2_value;
+                ////printf("\n------------------------------\ncpu->writeback.result_buffer: %d\ncpu->writeback.rs1_value: %d\ncpu->writeback.rs2_value: %d\n---------------------------------------\n",cpu->writeback.result_buffer,cpu->writeback.rs1_value,cpu->writeback.rs2_value);
+  
+                /* Set the zero flag based on the result buffer */
+                if (cpu->writeback.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                    //printf("\n#####DIV setting zero flag to : %d ########\n", cpu->zero_flag);
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                    //printf("\n#####DIV setting zero flag to : %d ########\n", cpu->zero_flag);
+                }
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 // //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1438,6 +1254,21 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_AND:
             {
+                cpu->writeback.result_buffer = cpu->writeback.rs1_value & cpu->writeback.rs2_value;
+
+                //printf("\n------------------------------\ncpu->writeback.result_buffer: %d\ncpu->writeback.rs1_value: %d\ncpu->writeback.rs2_value: %d\n---------------------------------------\n",cpu->writeback.result_buffer,cpu->writeback.rs1_value,cpu->writeback.rs2_value);
+                /* Set the zero flag based on the result buffer */
+                if (cpu->writeback.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                    //printf("\n#####AND setting zero flag to : %d ########\n", cpu->zero_flag);
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                    //printf("\n#####AND setting zero flag to : %d ########\n", cpu->zero_flag);
+                }
+                
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1468,6 +1299,20 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_OR:
             {
+                cpu->writeback.result_buffer = cpu->writeback.rs1_value | cpu->writeback.rs2_value;
+                //printf("\n------------------------------\ncpu->writeback.result_buffer: %d\ncpu->writeback.rs1_value: %d\ncpu->writeback.rs2_value: %d\n---------------------------------------\n",cpu->writeback.result_buffer,cpu->writeback.rs1_value,cpu->writeback.rs2_value);
+  
+                /* Set the zero flag based on the result buffer */
+                if (cpu->writeback.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                    //printf("\n#####OR setting zero flag to : %d ########\n", cpu->zero_flag);
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                    //printf("\n#####OR setting zero flag to : %d ########\n", cpu->zero_flag);
+                }
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1498,6 +1343,20 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_XOR:
             {
+                cpu->writeback.result_buffer = cpu->writeback.rs1_value ^ cpu->writeback.rs2_value;
+                //printf("\n------------------------------\ncpu->writeback.result_buffer: %d\ncpu->writeback.rs1_value: %d\ncpu->writeback.rs2_value: %d\n---------------------------------------\n",cpu->writeback.result_buffer,cpu->writeback.rs1_value,cpu->writeback.rs2_value);
+  
+                /* Set the zero flag based on the result buffer */
+                if (cpu->writeback.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                    //printf("\n#####XOR setting zero flag to : %d ########\n", cpu->zero_flag);
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                    //printf("\n#####XOR setting zero flag to : %d ########\n", cpu->zero_flag);
+                }
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1528,6 +1387,20 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_MOVC: 
             {   
+                cpu->writeback.result_buffer = cpu->writeback.imm;
+                //printf("\n------------------------------\ncpu->writeback.result_buffer: %d\ncpu->writeback.imm: %d\n---------------------------------------\n",cpu->writeback.result_buffer,cpu->writeback.imm);
+  
+                /* Set the zero flag based on the result buffer */
+                if (cpu->writeback.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                    //printf("\n#####MOVC setting zero flag to : %d ########\n", cpu->zero_flag);
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                    //printf("\n#####MOVC setting zero flag to : %d ########\n", cpu->zero_flag);
+                }
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 // //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1558,6 +1431,10 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_LOAD:
             {
+                cpu->writeback.memory_address = cpu->writeback.rs1_value + cpu->writeback.imm;
+                /* Read/LOAD from data writeback */
+                cpu->writeback.result_buffer = cpu->data_memory[cpu->writeback.memory_address];
+                
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 // //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1588,6 +1465,10 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_STORE:
             {
+                cpu->writeback.memory_address = cpu->writeback.rs2_value + cpu->writeback.imm;
+                /* Store to data writeback */
+                cpu->data_memory[cpu->writeback.memory_address] = cpu->writeback.rs1_value;
+                
                 //cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 // //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1620,6 +1501,7 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             case OPCODE_BZ:
             {
                 intStalled=0;
+                
                 for(int i=0; i<orderLen;i++){
                     if(orderArray[i]==intINS){
                         for(int j=i;j<orderLen;j++ ){
@@ -1634,6 +1516,7 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_BNZ:
             {
+                
                 intStalled=0;
                 for(int i=0; i<orderLen;i++){
                     if(orderArray[i]==intINS){
@@ -1649,6 +1532,20 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_ADDL:
             {
+                cpu->writeback.result_buffer = cpu->writeback.rs1_value + cpu->writeback.imm;
+                //printf("\n------------------------------\ncpu->writeback.result_buffer: %d\ncpu->writeback.rs1_value: %d\ncpu->writeback.imm: %d\n---------------------------------------\n",cpu->writeback.result_buffer,cpu->writeback.rs1_value,cpu->writeback.imm);
+  
+                /* Set the zero flag based on the result buffer */
+                if (cpu->writeback.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                    //printf("\n#####ADDL setting zero flag to : %d ########\n", cpu->zero_flag);
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                    //printf("\n#####ADDL setting zero flag to : %d ########\n", cpu->zero_flag);
+                }
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 // //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1679,6 +1576,20 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_SUBL:
             {
+                cpu->writeback.result_buffer = cpu->writeback.rs1_value - cpu->writeback.imm;
+                //printf("\n------------------------------\ncpu->writeback.result_buffer: %d\ncpu->writeback.rs1_value: %d\ncpu->writeback.imm: %d\n---------------------------------------\n",cpu->writeback.result_buffer,cpu->writeback.rs1_value,cpu->writeback.imm);
+  
+                /* Set the zero flag based on the result buffer */
+                if (cpu->writeback.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                }
+                //printf("\n#####SUBL setting zero flag to : %d ########\n", cpu->zero_flag);
+                
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 // //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1724,6 +1635,34 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_CMP:
             {
+                    //cpu->writeback.result_buffer = cpu->writeback.rs1_value - cpu->writeback.rs2_value;
+                if(cpu->writeback.rs1_value==cpu->writeback.rs2_value){
+                    //set z flag to 1
+                    cpu->writeback.result_buffer=0;
+
+                    //cpu->zero_flag = TRUE;
+                    //cpu->p_flag = FALSE;
+
+                }else{
+                    cpu->writeback.result_buffer=1;
+                    //set p flag to 1
+                    //cpu->zero_flag = FALSE;
+                    //cpu->p_flag = TRUE;
+
+                }
+                if (cpu->writeback.result_buffer == 0)
+                {
+                    cpu->zero_flag = TRUE;
+                } 
+                else 
+                {
+                    cpu->zero_flag = FALSE;
+                }
+                //printf("\n#####CMP setting zero flag to : %d ########\n", cpu->zero_flag);
+                //cmp
+                cpu->writeback.result_buffer = cpu->zero_flag;
+                
+            
                 //cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1754,6 +1693,10 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_STR:
             {
+                cpu->writeback.memory_address = cpu->writeback.rs1_value + cpu->writeback.rs2_value;
+                /* Store/STR to data writeback */
+                cpu->data_memory[cpu->writeback.memory_address] = cpu->writeback.rs3_value;
+                
                 //cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 // //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1784,6 +1727,12 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             }
             case OPCODE_LDR:
             {
+                   
+                cpu->writeback.memory_address = cpu->writeback.rs1_value + cpu->writeback.rs2_value;
+                
+                /* Read/LDR from data writeback */
+                cpu->writeback.result_buffer = cpu->data_memory[cpu->LOAD_STORE_FU.memory_address];
+             
                 cpu->regs[cpu->writeback.rd] = cpu->writeback.result_buffer;
 //--------------------------------------------------------------------------------------
                 // //printf("writeback rd: %d\n",cpu->writeback.rd);
@@ -1813,6 +1762,10 @@ APEX_writeback(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 break;
             }
    
+
+
+
+
         }
 
         cpu->insn_completed++;

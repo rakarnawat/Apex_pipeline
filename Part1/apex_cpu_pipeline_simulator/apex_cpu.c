@@ -197,9 +197,7 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
 {
     APEX_Instruction *current_ins;
     
-    if(cpu->fetch.has_insn == FALSE && ENABLE_DEBUG_MESSAGES==1){
-        printf("Fetch          : EMPTY\n");
-    }
+    
     if(stalled==0){
         if (cpu->fetch.has_insn)
         {
@@ -251,10 +249,7 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
             /* Copy data from fetch latch to decode latch*/
             cpu->decode = cpu->fetch;
             
-            if (ENABLE_DEBUG_MESSAGES)
-            {    
-                print_stage_content("Fetch", &cpu->fetch);
-            }
+            
 
             /* Stop fetching new instructions if HALT is fetched */
             if (cpu->fetch.opcode == OPCODE_HALT)
@@ -262,6 +257,13 @@ APEX_fetch(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
                 cpu->fetch.has_insn = FALSE;
             }
         }
+    }
+    if (ENABLE_DEBUG_MESSAGES && cpu->fetch.has_insn == TRUE && stalled==0)
+    {    
+        print_stage_content("Fetch", &cpu->fetch);
+    }
+    else{
+        printf("Fetch          : EMPTY\n");
     }
 }
 
@@ -275,6 +277,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
 {   if(cpu->decode.has_insn == FALSE && ENABLE_DEBUG_MESSAGES==1){
         printf("Decode/RF      : EMPTY\n");
     }
+    
 //------------------
 // printf("\n---------------------------\nArray: ");
 // for(int i = 0; i < arrLen; i++){
@@ -716,15 +719,12 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
         cpu->execute = cpu->decode;
         cpu->decode.has_insn = FALSE;
         }
-        if(ENABLE_DISPLAY!=0){
-            if (ENABLE_DEBUG_MESSAGES && stalled==0)
-            {
-                print_stage_content("Decode/RF", &cpu->decode);
-            }else{
-                printf("Decode/RF      : EMPTY\n");
-                print_stage_content("Fetch", &cpu->fetch);
-            }
+        
+        if (ENABLE_DEBUG_MESSAGES)
+        {
+            print_stage_content("Decode/RF", &cpu->decode);
         }
+        
     }
 
 //------------------
@@ -749,7 +749,7 @@ APEX_decode(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
 static void
 APEX_execute(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES)
 {   
-    if((stalled==1 || (cpu->execute.has_insn == FALSE && ENABLE_DEBUG_MESSAGES==1)) && ENABLE_DISPLAY!=0){
+    if(cpu->execute.has_insn == FALSE && ENABLE_DEBUG_MESSAGES==1){
         printf("Execute        : EMPTY\n");
     } else
     if (cpu->execute.has_insn)
