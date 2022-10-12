@@ -932,9 +932,9 @@ Apex_MUL_FU(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES){
 static void
 Apex_LOAD_STORE_FU(APEX_CPU *cpu, int ENABLE_DEBUG_MESSAGES){
     if(cpu->LOAD_STORE_FU.has_insn == FALSE && ENABLE_DEBUG_MESSAGES==1){
-        printf("LOAD/STORE     : EMPTY\n");
+        printf("LOAD_STORE_FU  : EMPTY\n");
     }else if(lsStalled==1 && lsCycle!=3){
-        print_stage_content("LOAD/STORE", &cpu->LOAD_STORE_FU);
+        print_stage_content("LOAD_STORE_FU", &cpu->LOAD_STORE_FU);
     }else
     if(cpu->LOAD_STORE_FU.has_insn || lsCycle==3){
         
