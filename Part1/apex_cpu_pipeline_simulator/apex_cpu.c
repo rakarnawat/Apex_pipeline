@@ -1611,7 +1611,7 @@ APEX_cpu_run(APEX_CPU *cpu)
         if (ENABLE_DEBUG_MESSAGES)
         {
             printf("--------------------------------------------\n");
-            printf("Clock Cycle #: %d\n", cpu->clock);
+            printf("Clock Cycle #: %d\n", cpu->clock+1);
             printf("--------------------------------------------\n");
         }
 
@@ -1639,7 +1639,7 @@ APEX_cpu_run(APEX_CPU *cpu)
             }
             else{
             /* Halt in writeback stage */
-            printf("APEX_CPU: Simulation Complete, cycles = %d instructions = %d\n", cpu->clock, cpu->insn_completed);
+            printf("APEX_CPU: Simulation Complete, cycles = %d instructions = %d\n", cpu->clock+1, cpu->insn_completed);
             break;
             }
         }
@@ -1659,7 +1659,7 @@ APEX_cpu_run(APEX_CPU *cpu)
             user_prompt_val= 'q';
             if ((user_prompt_val == 'Q') || (user_prompt_val == 'q'))
             {
-                printf("APEX_CPU: Simulation Stopped, cycles = %d instructions = %d\n", cpu->clock, cpu->insn_completed);
+                printf("APEX_CPU: Simulation Stopped, cycles = %d instructions = %d\n", cpu->clock+1, cpu->insn_completed);
                 break;
             }
         }
@@ -1670,7 +1670,7 @@ APEX_cpu_run(APEX_CPU *cpu)
 
             if ((user_prompt_val == 'Q') || (user_prompt_val == 'q'))
             {
-                printf("APEX_CPU: Simulation Stopped, cycles = %d instructions = %d\n", cpu->clock, cpu->insn_completed);
+                printf("APEX_CPU: Simulation Stopped, cycles = %d instructions = %d\n", cpu->clock+1, cpu->insn_completed);
                 break;
             }
         }else if(cpu->single_step>1){
